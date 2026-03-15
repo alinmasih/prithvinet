@@ -161,7 +161,7 @@ const ForecastingDashboard = () => {
                    </button>
                 </div>
               ) : (
-                <div className="flex-1 w-full h-full">
+                <div className="w-full h-[450px] mt-4">
                    <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={forecasts} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                          <defs>
