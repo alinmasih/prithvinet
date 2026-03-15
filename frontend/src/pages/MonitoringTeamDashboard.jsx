@@ -11,11 +11,13 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import PageBranding from '../components/PageBranding';
 import FormInput from '../components/forms/FormInput';
 
 const MonitoringTeamDashboard = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     type: 'Air',
     location: { coordinates: [81.6296, 21.2514], address: '' },
@@ -65,7 +67,7 @@ const MonitoringTeamDashboard = () => {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-4">
          <div>
             <h1 className="text-4xl lg:text-5xl font-black italic tracking-tighter uppercase leading-none">Field <br/><span className="text-emerald-500">Operation Unit</span></h1>
-            <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.4em] italic mt-4">Active Monitoring Grid - CECB Unit Delta</p>
+            <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.4em] italic mt-4">Active Monitoring Grid - {user?.name || 'CECB Field Unit'}</p>
          </div>
          <div className="flex bg-white/5 border border-white/10 rounded-[2rem] p-2 gap-2">
             {['Air', 'Water', 'Noise'].map(t => (

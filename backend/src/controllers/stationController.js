@@ -1,6 +1,6 @@
 const MonitoringStation = require('../models/MonitoringStation');
 
-// @desc    Get all monitoring stations
+// @desc    Get all monitoring teams
 // @route   GET /api/stations
 // @access  Private
 const getStations = async (req, res) => {
@@ -12,7 +12,7 @@ const getStations = async (req, res) => {
   }
 };
 
-// @desc    Get single monitoring station
+// @desc    Get single monitoring team
 // @route   GET /api/stations/:id
 // @access  Private
 const getStationById = async (req, res) => {
@@ -28,7 +28,7 @@ const getStationById = async (req, res) => {
   }
 };
 
-// @desc    Create new monitoring station
+// @desc    Create new monitoring team
 // @route   POST /api/stations
 // @access  Private/Admin
 const createStation = async (req, res) => {
@@ -44,7 +44,7 @@ const createStation = async (req, res) => {
   }
 };
 
-// @desc    Update monitoring station
+// @desc    Update monitoring team
 // @route   PUT /api/stations/:id
 // @access  Private/Admin
 const updateStation = async (req, res) => {
@@ -64,7 +64,7 @@ const updateStation = async (req, res) => {
   }
 };
 
-// @desc    Delete monitoring station
+// @desc    Delete monitoring team
 // @route   DELETE /api/stations/:id
 // @access  Private/Admin
 const deleteStation = async (req, res) => {

@@ -18,6 +18,8 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../api/client';
 import PageBranding from '../components/PageBranding';
+import CitizenComplaintForm from './CitizenComplaint';
+import { X } from 'lucide-react';
 import { 
   AreaChart, 
   Area, 
@@ -43,6 +45,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 const PublicDashboard = () => {
   const [pollutionData, setPollutionData] = useState({ air: [], water: [], noise: [], stations: [] });
   const [industryStats, setIndustryStats] = useState({ stats: [], sampleIndustries: [] });
+  const [showComplaintForm, setShowComplaintForm] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -94,7 +97,13 @@ const PublicDashboard = () => {
         </div>
         
         <div className="flex bg-white/5 border border-white/10 rounded-3xl p-2 gap-2">
-           <button className="px-8 py-3 bg-emerald-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs shadow-xl shadow-emerald-600/20">Real-Time Data</button>
+            <button 
+               onClick={() => setShowComplaintForm(true)}
+               className="px-8 py-3 bg-amber-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs shadow-xl shadow-amber-600/20 hover:scale-105 transition-all"
+            >
+               Report Violation
+            </button>
+            <button className="px-8 py-3 bg-emerald-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs shadow-xl shadow-emerald-600/20">Real-Time Data</button>
            <button className="px-8 py-3 hover:bg-white/5 text-text-muted rounded-2xl font-black uppercase italic tracking-widest text-xs transition-all">Regional Trends</button>
         </div>
       </div>
@@ -270,6 +279,21 @@ const PublicDashboard = () => {
          </div>
          <button className="px-10 py-4 bg-rose-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-sm shadow-xl shadow-rose-600/30 hover:scale-105 transition-all">Emergency Protocols</button>
       </div>
+
+      {/* Citizen Complaint Modal */}
+      {showComplaintForm && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 backdrop-blur-2xl bg-black/80 animate-in fade-in duration-300">
+           <div className="w-full max-w-6xl max-h-[95vh] overflow-y-auto custom-scrollbar relative">
+              <button 
+                onClick={() => setShowComplaintForm(false)}
+                className="absolute top-8 right-12 z-[2001] p-3 bg-white/5 border border-white/10 rounded-2xl hover:bg-rose-500 hover:text-white transition-all text-white/50"
+              >
+                 <X size={24} />
+              </button>
+              <CitizenComplaintForm />
+           </div>
+        </div>
+      )}
 
     </div>
   );

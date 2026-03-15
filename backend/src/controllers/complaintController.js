@@ -6,8 +6,18 @@ const CitizenReport = require('../models/CitizenReport');
 const createComplaint = async (req, res) => {
   try {
     const report = await CitizenReport.create(req.body);
+    
+    // Create automated alert
+    await require('../models/Alert').create({
+      alert_type: 'Citizen Complaint',
+      location: report.location,
+      complaint: report._id,
+      status: 'Active'
+    });
+
     res.status(201).json(report);
   } catch (error) {
+    console.error('Complaint Error:', error);
     res.status(400).json({ message: 'Invalid report data' });
   }
 };

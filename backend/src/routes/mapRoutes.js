@@ -7,7 +7,7 @@ const Industry = require('../models/Industry');
 
 /**
  * GET /api/map/environmental-data
- * Returns all monitoring stations for map visualization
+ * Returns all monitoring teams for map visualization
  */
 router.get('/environmental-data', async (req, res) => {
   try {

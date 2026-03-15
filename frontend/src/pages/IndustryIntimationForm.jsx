@@ -9,6 +9,7 @@ import {
   Phone, 
   FileText, 
   CreditCard,
+  Shield,
   Briefcase,
   AlertCircle,
   ArrowRight,

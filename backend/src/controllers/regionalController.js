@@ -8,16 +8,22 @@ const RegionalOffice = require('../models/RegionalOffice');
 // @access  Private/Regional Officer
 const getMyJurisdictionIndustries = async (req, res) => {
   try {
-    // Return industries in the RO's assigned region
-    const industries = await Industry.find({ 
-      district: req.user.region_district // Need to ensure district is accessible
-    });
-    // Or better, filter by regional_officer_id if assigned
-    const assignedIndustries = await Industry.find({ regional_officer_id: req.user._id });
+    const targetOfficeId = req.query.officeId || (req.user.role === 'Regional Officer' ? req.user.assigned_region : null);
     
-    res.json(assignedIndustries);
+    const query = {};
+    if (targetOfficeId) {
+      query.assigned_region = targetOfficeId;
+    }
+    
+    // Fallback: If no office ID and is RO, use RO's ID linkage
+    if (!targetOfficeId && req.user.role === 'Regional Officer') {
+      query.regional_officer_id = req.user._id;
+    }
+
+    const industries = await Industry.find(query);
+    res.json(industries);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
 
@@ -45,15 +51,48 @@ const createMonitoringTeam = async (req, res) => {
 // @access  Private/Regional Officer
 const getMyRegionalOffice = async (req, res) => {
   try {
-    const office = await RegionalOffice.findById(req.user.assigned_region);
+    const targetId = req.params.id || req.user.assigned_region;
+    if (!targetId) return res.status(400).json({ message: 'No office ID provided' });
+    
+    const office = await RegionalOffice.findById(targetId);
     res.json(office);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+// @desc    Get RO's monitoring teams
+// @route   GET /api/regional/teams
+// @access  Private/Regional Officer
+const getMyMonitoringTeams = async (req, res) => {
+  try {
+    const targetOfficeId = req.query.officeId || (req.user.role === 'Regional Officer' ? req.user.assigned_region : null);
+    
+    let query = {};
+    if (targetOfficeId) {
+      // Find the RO for this office first to get teams linked to them
+      const roUser = await User.findOne({ assigned_region: targetOfficeId, role: 'Regional Officer' });
+      if (roUser) {
+        query.regional_officer_id = roUser._id;
+      } else {
+        // Fallback for offices without an RO yet? 
+        return res.json([]);
+      }
+    } else {
+      query.regional_officer_id = req.user._id;
+    }
+
+    const teams = await MonitoringTeam.find(query)
+      .populate('members', 'name email status');
+    res.json(teams);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+};
+
 module.exports = {
   getMyJurisdictionIndustries,
   createMonitoringTeam,
-  getMyRegionalOffice
+  getMyRegionalOffice,
+  getMyMonitoringTeams
 };

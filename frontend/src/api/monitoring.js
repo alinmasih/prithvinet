@@ -33,3 +33,8 @@ export const submitPollutionData = (data) => client.post('/pollution', data);
 export const getPollutionReadings = () => client.get('/pollution');
 export const submitComplaint = (data) => client.post('/complaints', data);
 export const getComplaints = () => client.get('/complaints');
+
+// Compliance Reports
+export const getComplianceReports = () => client.get('/reports/compliance');
+export const submitComplianceStatus = (data) => client.post('/reports/compliance', data);
+export const exportCompliancePDF = () => client.get('/reports/compliance/export', { responseType: 'blob' });

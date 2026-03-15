@@ -14,6 +14,7 @@ const getAlerts = async (req, res) => {
     const alerts = await Alert.find(query)
       .populate('station', 'stationName location')
       .populate('industry', 'industryName')
+      .populate('complaint')
       .populate('assigned_officer', 'name')
       .sort({ timestamp: -1 });
     res.json(alerts);

@@ -14,6 +14,11 @@ const sensorDataSchema = new mongoose.Schema({
   temperature: Number,
   humidity: Number,
   noise_level: Number,
+  air_quality_ppm: Number,
+  co_ppm: Number,
+  smoke_ppm: Number,
+  noise_db: Number,
+  turbidity_ntu: Number,
   createdAt: {
     type: Date,
     default: Date.now

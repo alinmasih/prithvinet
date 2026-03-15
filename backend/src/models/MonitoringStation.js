@@ -63,4 +63,4 @@ const monitoringStationSchema = new mongoose.Schema({
 });
 
 
-module.exports = mongoose.model('MonitoringStation', monitoringStationSchema);
+module.exports = mongoose.model('MonitoringStation', monitoringStationSchema, 'stations');

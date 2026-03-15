@@ -7,11 +7,14 @@ import {
   Send,
   Calendar,
   Clock,
-  MapPin
+  MapPin,
+  FileText,
+  Plus
 } from 'lucide-react';
 import AirSubmission from '../components/Monitoring/AirSubmission';
 import WaterSubmission from '../components/Monitoring/WaterSubmission';
 import NoiseSubmission from '../components/Monitoring/NoiseSubmission';
+import { useAuth } from '../context/AuthContext';
 
 const MonitoringDashboard = () => {
   const [activeTab, setActiveTab] = useState('air');
@@ -28,7 +31,7 @@ const MonitoringDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-primary/5 p-8 rounded-[2.5rem] border border-primary/10">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-white">Field Submission Portal</h1>
-          <p className="text-text-muted mt-2 text-sm font-medium">Logged in as: <span className="text-primary font-bold italic">Monitoring Team Alpha (Raipur)</span></p>
+          <div className="text-text-muted mt-2 text-sm font-medium">Logged in as: <span className="text-primary font-bold italic">Monitoring Team Alpha (Raipur)</span></div>
         </div>
 
         <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-2xl border border-white/5 backdrop-blur-sm shadow-xl shadow-black/20">
@@ -65,7 +68,7 @@ const MonitoringDashboard = () => {
       <div className="glass-morphism rounded-[2rem] p-4 min-h-[500px]">
         {activeTab === 'air' && <AirSubmission />}
         {activeTab === 'water' && <WaterSubmission />}
-        {activeTab === 'noise' && <NoiseSubmission />}
+        { activeTab === 'noise' && <NoiseSubmission /> }
         {activeTab === 'inspections' && (
           <div className="p-8 space-y-8 animate-fade-in">
              <div className="flex justify-between items-center mb-6">
@@ -94,8 +97,8 @@ const MonitoringDashboard = () => {
                       </div>
                    </div>
 
-                   <div className="space-y-4 pt-4 border-t border-white/5">
-                      <p className="font-bold text-sm italic">Digital Audit Checklist</p>
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                       <div className="font-bold text-sm italic">Digital Audit Checklist</div>
                       <div className="space-y-3">
                          <ChecklistItem label="Valid Environmental Clearance (EC)" />
                          <ChecklistItem label="Stack Monitoring (CEMS) Operational" />
@@ -111,9 +114,9 @@ const MonitoringDashboard = () => {
                    </div>
                 </div>
 
-                <div className="space-y-6">
-                   <div className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-4">
-                      <p className="text-[10px] font-black text-text-muted uppercase tracking-widest text-center">Substantiating Evidence</p>
+                 <div className="space-y-6">
+                    <div className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-4">
+                       <div className="text-[10px] font-black text-text-muted uppercase tracking-widest text-center">Substantiating Evidence</div>
                       <div className="w-full h-40 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/5 transition-all group">
                          <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                             <Plus size={24} className="text-text-muted group-hover:text-primary" />
@@ -142,7 +145,7 @@ const ChecklistItem = ({ label }) => (
            <MapPin size={12} className="text-white opacity-0 peer-checked:opacity-100" />
         </div>
      </div>
-     <span className="text-xs font-bold text-text-muted group-hover:text-white transition-colors">{label}</span>
+     <div className="text-xs font-bold text-text-muted group-hover:text-white transition-colors">{label}</div>
   </label>
 );
 

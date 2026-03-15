@@ -12,16 +12,25 @@ import {
   AlertOctagon
 } from 'lucide-react';
 import api from '../api/auth';
+import { useSearchParams } from 'react-router-dom';
 
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const filterType = searchParams.get('type');
 
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
         const res = await api.get('/alerts');
-        setAlerts(res.data);
+        let filteredData = res.data;
+        
+        if (filterType === 'citizen') {
+          filteredData = res.data.filter(a => a.alert_type === 'Citizen Complaint');
+        }
+        
+        setAlerts(filteredData);
       } catch (error) {
         console.error('Error fetching alerts:', error);
       } finally {
@@ -29,7 +38,7 @@ const Alerts = () => {
       }
     };
     fetchAlerts();
-  }, []);
+  }, [filterType]);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -78,28 +87,35 @@ const Alerts = () => {
 };
 
 const AlertItem = ({ alert }) => {
-  const isHigh = alert.alert_type === 'Pollution Exceedance' || alert.alert_type === 'Industrial Violation';
+  const isHigh = alert.alert_type === 'Pollution Exceedance' || alert.alert_type === 'Industrial Violation' || alert.alert_type === 'Citizen Complaint';
+  const isCitizen = alert.alert_type === 'Citizen Complaint';
 
   return (
     <div className={`group glass-morphism rounded-3xl p-6 border-l-4 transition-all hover:translate-x-2 
-      ${isHigh ? 'border-rose-500 hover:bg-rose-500/[0.02]' : 'border-amber-500 hover:bg-amber-500/[0.02]'}`}>
+      ${isCitizen ? 'border-primary hover:bg-primary/[0.02]' : isHigh ? 'border-rose-500 hover:bg-rose-500/[0.02]' : 'border-amber-500 hover:bg-amber-500/[0.02]'}`}>
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="flex items-start gap-5">
-           <div className={`p-4 rounded-2xl ${isHigh ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500'}`}>
-              <AlertTriangle size={24} />
+           <div className={`p-4 rounded-2xl ${isCitizen ? 'bg-primary/10 text-primary' : isHigh ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500'}`}>
+              {isCitizen ? <ShieldAlert size={24} /> : <AlertTriangle size={24} />}
            </div>
            <div>
               <div className="flex items-center gap-3 mb-1">
-                <h3 className="font-black text-lg uppercase tracking-tight">{alert.alert_type}</h3>
+                <h3 className="font-black text-lg uppercase tracking-tight">
+                  {isCitizen ? 'Citizen Complaint via Portal' : alert.alert_type}
+                </h3>
                 <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest 
                   ${alert.status === 'Active' ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
                   {alert.status}
                 </span>
               </div>
               <p className="text-text-muted text-sm font-medium max-w-2xl leading-relaxed">
-                {alert.alert_type === 'Pollution Exceedance' 
-                  ? `${alert.parameter} levels at ${alert.location || 'Unknown'} were detected at ${alert.value}, exceeding the safety limit of ${alert.limit}.`
-                  : `Detection of unauthorized activity at ${alert.location || 'designated site'}. Investigative response required.`}
+                {isCitizen 
+                  ? alert.complaint 
+                     ? `${alert.complaint.pollution_type} violation reported at ${alert.complaint.location}: ${alert.complaint.description}`
+                     : `Community report received: Violation detected at ${alert.location || 'specified area'}. Public assistance request pending field verification.`
+                  : alert.alert_type === 'Pollution Exceedance' 
+                    ? `${alert.parameter} levels at ${alert.location || 'Unknown'} were detected at ${alert.value}, exceeding the safety limit of ${alert.limit}.`
+                    : `Detection of unauthorized activity at ${alert.location || 'designated site'}. Investigative response required.`}
               </p>
               <div className="flex flex-wrap gap-4 mt-4">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-text-muted uppercase italic">

@@ -15,28 +15,77 @@ import {
   Box,
   LogOut,
   X,
-  Building2
+  Building2,
+  ChevronDown,
+  TrendingUp,
+  ChevronRight as ChevronRightIcon
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import api from '../api/client';
 
 
 const Sidebar = ({ isOpen, close }) => {
   const { user, logout, isAdmin, isRegionalOfficer, isMonitoringTeam, isIndustryUser } = useAuth();
+  const [expandedMenus, setExpandedMenus] = useState(['Reports']);
+  const [offices, setOffices] = useState([]);
+
+  useEffect(() => {
+    const fetchOffices = async () => {
+      try {
+        const res = await api.get('/public/offices');
+        setOffices(res.data);
+      } catch (error) {
+        console.error('Failed to fetch offices:', error);
+      }
+    };
+    fetchOffices();
+  }, []);
+
+  const toggleMenu = (name) => {
+    setExpandedMenus(prev =>
+      prev.includes(name) ? prev.filter(m => m !== name) : [...prev, name]
+    );
+  };
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: !isIndustryUser },
-    { name: 'Regional Hub', icon: Map, path: '/regional', show: isRegionalOfficer },
+    { 
+      name: 'Regional Office', 
+      icon: Map, 
+      path: '/regional', 
+      show: isAdmin || isRegionalOfficer
+    },
     { name: 'Field Entry', icon: Activity, path: '/monitoring', show: isMonitoringTeam },
     { name: 'Corporate Grid', icon: Factory, path: '/industry', show: false },
     { name: 'Upload Report', icon: FileText, path: '/upload-report', show: isIndustryUser },
-    { name: 'Monitoring Stations', icon: Activity, path: '/stations', show: isAdmin || isRegionalOfficer },
+    { name: 'Monitoring Team', icon: Activity, path: '/stations', show: isAdmin || isRegionalOfficer },
     { name: 'Industries', icon: Factory, path: '/industries', show: isAdmin || isRegionalOfficer },
     { name: 'Water Sources', icon: Waves, path: '/water-sources', show: isAdmin || isRegionalOfficer },
-    { name: 'Alerts', icon: FileWarning, path: '/alerts', show: (isAdmin || isRegionalOfficer) },
-    { name: 'Reports', icon: FileText, path: '/reports', show: isAdmin || isRegionalOfficer || isMonitoringTeam },
+    { 
+      name: 'Alerts', 
+      icon: FileWarning, 
+      path: '/alerts', 
+      show: (isAdmin || isRegionalOfficer),
+      subItems: [
+        { name: 'System Alerts', path: '/alerts' },
+        { name: 'Citizen Complaint', path: '/alerts?type=citizen' }
+      ]
+    },
+    { 
+      name: 'Reports', 
+      icon: FileText, 
+      path: '/reports', 
+      show: isAdmin || isRegionalOfficer || isMonitoringTeam,
+      subItems: [
+        { name: 'Industry Report', path: '/reports/industry' },
+        { name: 'Regional Office Report', path: '/reports/regional' },
+        { name: 'IoT Data', path: '/reports/iot' }
+      ]
+    },
     { name: 'AI Copilot', icon: Cpu, path: '/ai-copilot', show: isAdmin || isRegionalOfficer },
+    { name: 'AI Forecasting', icon: TrendingUp, path: '/forecasting', show: !isIndustryUser },
     { name: '3D Simulation', icon: Box, path: '/simulation', show: !isIndustryUser },
-    { name: 'User Management', icon: Users, path: '/users', show: isAdmin },
-
+    { name: 'User Management', icon: Users, path: '/users', show: isAdmin || isRegionalOfficer },
   ];
 
   return (
@@ -77,24 +126,57 @@ const Sidebar = ({ isOpen, close }) => {
 
         <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar no-scrollbar">
           {navItems.filter(item => item.show).map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={() => {
-                if (window.innerWidth < 1024) close();
-              }}
-              className={({ isActive }) => 
-                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                  isActive 
-                    ? 'bg-primary text-white shadow-lg shadow-primary/30' 
-                    : 'text-text-muted hover:bg-white/5 hover:text-white'
-                }`
-              }
-
-            >
-              <item.icon size={20} />
-              <span className="font-medium">{item.name}</span>
-            </NavLink>
+            <div key={item.path}>
+              {item.subItems ? (
+                <div className="space-y-1">
+                  <button
+                    onClick={() => toggleMenu(item.name)}
+                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-text-muted hover:bg-white/5 hover:text-white`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon size={20} />
+                      <span className="font-medium">{item.name}</span>
+                    </div>
+                    {expandedMenus.includes(item.name) ? <ChevronDown size={14} /> : <ChevronRightIcon size={14} />}
+                  </button>
+                  
+                  {expandedMenus.includes(item.name) && (
+                    <div className="ml-9 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                      {item.subItems.map(sub => (
+                        <NavLink
+                          key={sub.path}
+                          to={sub.path}
+                          className={({ isActive }) => 
+                            `flex items-center gap-3 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                              isActive ? 'text-primary' : 'text-text-muted hover:text-white'
+                            }`
+                          }
+                        >
+                          {sub.name}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <NavLink
+                  to={item.path}
+                  onClick={() => {
+                    if (window.innerWidth < 1024) close();
+                  }}
+                  className={({ isActive }) => 
+                    `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                      isActive 
+                        ? 'bg-primary text-white shadow-lg shadow-primary/30' 
+                        : 'text-text-muted hover:bg-white/5 hover:text-white'
+                    }`
+                  }
+                >
+                  <item.icon size={20} />
+                  <span className="font-medium">{item.name}</span>
+                </NavLink>
+              )}
+            </div>
           ))}
         </nav>
 

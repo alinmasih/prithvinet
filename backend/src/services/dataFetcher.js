@@ -2,13 +2,14 @@ const axios = require('axios');
 const AirQuality = require('../models/AirQuality');
 const WaterQuality = require('../models/WaterQuality');
 const NoisePollution = require('../models/NoisePollution');
+const SensorData = require('../models/SensorData');
 
 // Configuration - Use environment variables for API keys
 const DATA_GOV_API_KEY = process.env.DATA_GOV_API_KEY;
 
 /**
  * Fetch Air Quality data from data.gov.in
- * Dataset: Real-time Air Quality Index from various monitoring stations
+ * Dataset: Real-time Air Quality Index from various monitoring teams
  */
 async function fetchAirQuality() {
   try {
@@ -154,6 +155,7 @@ async function fetchNoisePollution() {
     console.error('Error fetching Noise Pollution data:', error.message);
   }
 }
+
 
 async function updateAllEnvironmentalData() {
   await fetchAirQuality();

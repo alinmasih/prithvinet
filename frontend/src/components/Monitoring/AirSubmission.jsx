@@ -74,7 +74,7 @@ const AirSubmission = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-bold">Air Quality Data Entry</h2>
-          <p className="text-text-muted text-sm mt-1">Record hourly pollutants for registered monitoring stations.</p>
+          <p className="text-text-muted text-sm mt-1">Record hourly pollutants for registered monitoring teams.</p>
         </div>
         <div className="flex items-center gap-2 text-xs font-bold text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20 uppercase tracking-widest">
           <Database size={14} /> Local Cache Active
@@ -85,7 +85,7 @@ const AirSubmission = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-semibold text-text-muted block flex items-center gap-2">
-              <MapPin size={14} className="text-primary" /> Select Monitoring Station
+              <MapPin size={14} className="text-primary" /> Select Monitoring Team
             </label>
             <select 
               name="station_id"

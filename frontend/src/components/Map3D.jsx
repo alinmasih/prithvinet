@@ -91,7 +91,7 @@ const Map3D = ({ onLocationClick, selectedStation, industries, stations }) => {
       data: { type: 'FeatureCollection', features: [] }
     });
 
-    // 2. Monitoring Stations Source
+    // 2. Monitoring Team Source
     m.addSource('monitoring-stations', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] }
@@ -126,7 +126,7 @@ const Map3D = ({ onLocationClick, selectedStation, industries, stations }) => {
       }
     }, 'waterway-label');
 
-    // Monitoring Station Layer - Icons
+    // Monitoring Team Layer - Icons
     m.addLayer({
         id: 'station-icons',
         type: 'symbol',
@@ -205,7 +205,7 @@ const Map3D = ({ onLocationClick, selectedStation, industries, stations }) => {
     }));
     m.getSource('aqi-heatmap').setData({ type: 'FeatureCollection', features: aqiFeatures });
 
-    // Monitoring Stations (All types)
+    // Monitoring Teams (All types)
     const stationFeatures = [
         ...stations.air.map(s => ({ type: 'Feature', geometry: s.location, properties: { type: 'air', ...s } })),
         ...stations.water.map(s => ({ type: 'Feature', geometry: s.location, properties: { type: 'water', ...s } })),

@@ -35,8 +35,11 @@ const getRecentLogs = async (req, res) => {
   const query = {};
   if (type) query.monitoring_type = type;
 
-  // Regional Officers only see logs from their jurisdiction
-  if (req.user.role === 'Regional Officer') {
+  // Filter by officeId if provided (Admin viewing specific office)
+  if (req.query.officeId) {
+    query.region = req.query.officeId;
+  } else if (req.user.role === 'Regional Officer') {
+    // Regional Officers only see logs from their own jurisdiction by default
     query.region = req.user.assigned_region;
   }
 

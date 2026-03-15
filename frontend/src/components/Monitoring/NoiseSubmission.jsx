@@ -75,7 +75,7 @@ const NoiseSubmission = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-semibold text-text-muted block flex items-center gap-2">
-              <MapPin size={14} className="text-rose-500" /> Monitoring Station
+              <MapPin size={14} className="text-rose-500" /> Monitoring Team
             </label>
             <select 
               name="station_id"

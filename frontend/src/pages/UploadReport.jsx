@@ -13,6 +13,8 @@ import {
   Trash2,
   Calendar
 } from 'lucide-react';
+import { submitComplianceStatus } from '../api/monitoring';
+import { useAuth } from '../context/AuthContext';
 
 const UploadReport = () => {
   const [reportType, setReportType] = useState('Daily Emission Report');
@@ -27,7 +29,11 @@ const UploadReport = () => {
     // Water Fields
     ph: '', bod: '', cod: '', tss: '', oilGrease: '',
     // Waste Fields
-    wasteCategory: '', quantity: '', storageCondition: 'Secure', disposalMode: 'TSDF'
+    wasteCategory: '', quantity: '', storageCondition: 'Secure', disposalMode: 'TSDF',
+    // Device Status Fields
+    aaqms_online: '0', aaqms_offline: '0',
+    cems_online: '0', cems_offline: '0',
+    eqms_online: '0', eqms_offline: '0'
   });
 
   const handleInputChange = (e) => {
@@ -35,14 +41,30 @@ const UploadReport = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const { user } = useAuth();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setUploading(true);
-    // Simulate data submission pulse
-    setTimeout(() => {
-      setUploading(false);
+    try {
+      if (reportType === 'Device Status Update') {
+        const payload = {
+          industryId: user.industry_id || user.id, // Fallback for testing
+          aaqms: { online: Number(formData.aaqms_online), offline: Number(formData.aaqms_offline) },
+          cems: { online: Number(formData.cems_online), offline: Number(formData.cems_offline) },
+          eqms: { online: Number(formData.eqms_online), offline: Number(formData.eqms_offline) }
+        };
+        await submitComplianceStatus(payload);
+      } else {
+        // Handle other reports (existing simulation logic or real API if exists)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
       setSuccess(true);
-    }, 2000);
+    } catch (err) {
+      alert('Transmission Failed: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const renderAirFields = () => (
@@ -153,6 +175,44 @@ const UploadReport = () => {
     </div>
   );
 
+  const renderDeviceFields = () => (
+    <div className="space-y-8 animate-fade-in">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[
+          { id: 'aaqms', label: 'AAQMS', color: 'emerald' },
+          { id: 'cems', label: 'CEMS', color: 'blue' },
+          { id: 'eqms', label: 'EQMS', color: 'purple' },
+        ].map((sys) => (
+          <div key={sys.id} className={`p-6 bg-white/5 border border-white/10 rounded-3xl space-y-6`}>
+             <h5 className={`text-xs font-black uppercase tracking-widest text-${sys.color}-500 italic`}>{sys.label} Status</h5>
+             <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                   <label className="text-[9px] font-black uppercase text-text-muted">Online</label>
+                   <input 
+                     type="number"
+                     name={`${sys.id}_online`}
+                     value={formData[`${sys.id}_online`]}
+                     onChange={handleInputChange}
+                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-emerald-500 outline-none"
+                   />
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[9px] font-black uppercase text-text-muted">Offline</label>
+                   <input 
+                     type="number"
+                     name={`${sys.id}_offline`}
+                     value={formData[`${sys.id}_offline`]}
+                     onChange={handleInputChange}
+                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-rose-500 outline-none"
+                   />
+                </div>
+             </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="grow animate-fade-in p-8 lg:p-12 max-w-[1600px] mx-auto w-full">
       {/* Header Context */}
@@ -165,15 +225,15 @@ const UploadReport = () => {
             </div>
             <div>
               <h1 className="text-4xl font-black italic tracking-tighter uppercase text-white">Compliance Node</h1>
-              <p className="text-text-muted font-black uppercase tracking-[0.4em] text-[10px] mt-2 italic flex items-center gap-2">
+              <div className="text-text-muted font-black uppercase tracking-[0.4em] text-[10px] mt-2 italic flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Secure Data Transmission Terminal
-              </p>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="lg:w-[400px] bg-white/5 border border-white/10 rounded-[3.5rem] p-10 flex flex-col justify-center">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-text-muted mb-4 italic">Next Mandatory Filing</p>
+            <div className="text-[10px] font-black uppercase tracking-[0.4em] text-text-muted mb-4 italic">Next Mandatory Filing</div>
             <div className="flex items-center gap-4">
                <Calendar className="text-primary" size={24} />
                <h3 className="text-2xl font-black italic text-white uppercase italic">15 MAR 2026</h3>
@@ -234,7 +294,8 @@ const UploadReport = () => {
                     {[
                       { id: 'Daily Emission Report', icon: Wind, label: 'Air Emissions' },
                       { id: 'Water Discharge Log', icon: Droplets, label: 'Water Discharge' },
-                      { id: 'Hazardous Waste Audit', icon: Trash2, label: 'Hazardous Waste' }
+                      { id: 'Hazardous Waste Audit', icon: Trash2, label: 'Hazardous Waste' },
+                      { id: 'Device Status Update', icon: FileText, label: 'Device Status' }
                     ].map((type) => (
                       <button
                         key={type.id}
@@ -261,6 +322,7 @@ const UploadReport = () => {
                   {reportType === 'Daily Emission Report' && renderAirFields()}
                   {reportType === 'Water Discharge Log' && renderWaterFields()}
                   {reportType === 'Hazardous Waste Audit' && renderWasteFields()}
+                  {reportType === 'Device Status Update' && renderDeviceFields()}
                 </div>
 
                 <button 

@@ -2,11 +2,13 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // Safeguard against invalid or missing API keys
 const apiKey = process.env.GEMINI_API_KEY;
-const isValidKey = apiKey && apiKey.startsWith('AIza') && apiKey.length > 30;
+console.log("DEBUG: GEMINI_API_KEY prefix:", apiKey ? apiKey.substring(0, 4) : 'null');
+console.log("DEBUG: GEMINI_API_KEY length:", apiKey ? apiKey.length : 0);
+const isValidKey = apiKey && apiKey.split('').every(c => c.charCodeAt(0) < 128) && apiKey.startsWith('AIza') && apiKey.length > 30;
 
 let genAI = null;
 if (isValidKey) {
-  genAI = new GoogleGenerativeAI(apiKey);
+  genAI = new GoogleGenerativeAI(apiKey.trim());
 } else {
   console.warn("WARNING: GEMINI_API_KEY is missing or invalid. AI features will be unavailable.");
 }

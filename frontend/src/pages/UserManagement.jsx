@@ -134,7 +134,7 @@ const UserManagement = () => {
               <button 
                 onClick={() => { setActiveForm('station'); setShowForm(true); }}
                 className="flex items-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-[1.2rem] font-black shadow-lg hover:scale-105 transition-all text-[10px] uppercase italic tracking-widest"
-                title="Deploy Monitoring Station"
+                title="Deploy Monitoring Team"
               >
                 <Radio size={16} /> Station
               </button>

@@ -13,11 +13,19 @@ connectDB();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
 app.use('/uploads', express.static('uploads'));
 
 // Basic Route
 app.get('/', (req, res) => {
   res.send('CECB PrithviNet API is running...');
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date() });
 });
 
 // Routes
@@ -38,6 +46,9 @@ app.use('/api/regional', require('./routes/regionalRoutes'));
 app.use('/api/monitoring', require('./routes/monitoringRoutes'));
 app.use('/api/public', require('./routes/publicRoutes'));
 app.use('/api/map', require('./routes/mapRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
+app.use('/api/iot', require('./routes/iotRoutes'));
+app.use('/api/forecasting', require('./routes/forecastingRoutes'));
 
 // Serve Static Files from Frontend
 const distPath = path.resolve(__dirname, '..', '..', 'frontend', 'dist');

@@ -5,8 +5,9 @@ import 'leaflet/dist/leaflet.css';
 
 const CitizenComplaintForm = () => {
   const [formData, setFormData] = useState({
-    type: 'Air Pollution',
+    pollution_type: 'Air',
     location: '',
+    district: '',
     description: '',
     anonymous: false
   });
@@ -48,10 +49,9 @@ const CitizenComplaintForm = () => {
       const response = await fetch(`${API_BASE}/complaints`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(dataToSend),
+        body: JSON.stringify(formData),
       });
 
 
@@ -113,27 +113,45 @@ const CitizenComplaintForm = () => {
               <div className="space-y-3">
                 <label className="text-xs font-black text-text-muted uppercase tracking-[0.2em]">Offense Category</label>
                 <select 
-                  name="type"
-                  value={formData.type}
+                  name="pollution_type"
+                  value={formData.pollution_type}
                   onChange={handleChange}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary transition-all text-white font-bold"
                 >
-                  <option>Air Pollution</option>
-                  <option>Water Contamination</option>
-                  <option>Noise Violation</option>
-                  <option>Illegal Dumping</option>
-                  <option>Industrial Emission</option>
+                  <option value="Air">Air Pollution</option>
+                  <option value="Water">Water Contamination</option>
+                  <option value="Noise">Noise Violation</option>
+                  <option value="Waste">Illegal Dumping</option>
+                  <option value="Other">Other Violation</option>
                 </select>
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs font-black text-text-muted uppercase tracking-[0.2em]">Nearest Landmark</label>
+                <label className="text-xs font-black text-text-muted uppercase tracking-[0.2em]">District / Region</label>
+                <select 
+                  name="district"
+                  value={formData.district}
+                  onChange={handleChange}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary transition-all text-white font-bold"
+                  required
+                >
+                  <option value="">Select District</option>
+                  <option>RAIPUR</option>
+                  <option>DURG</option>
+                  <option>BHILAI</option>
+                  <option>KORBA</option>
+                  <option>BILASPUR</option>
+                </select>
+              </div>
+
+              <div className="space-y-3 md:col-span-2">
+                <label className="text-xs font-black text-text-muted uppercase tracking-[0.2em]">Nearest Landmark / Precise Location</label>
                 <div className="relative">
                   <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-primary" size={18} />
                   <input 
                     type="text"
                     name="location"
-                    placeholder="e.g. Near Ghadi Chowk"
+                    placeholder="e.g. Near Ghadi Chowk or Industrial Estate Gate No. 4"
                     value={formData.location}
                     onChange={handleChange}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 py-4 outline-none focus:border-primary transition-all font-medium"

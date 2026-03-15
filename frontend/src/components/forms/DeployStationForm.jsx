@@ -59,7 +59,7 @@ const DeployStationForm = ({ onSubmit, onCancel }) => {
   return (
     <form onSubmit={handleSubmit} className="p-6 bg-gray-900/40 rounded-3xl border border-white/5 shadow-2xl animate-fade-in">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-black text-white italic tracking-tight">DEPLOY MONITORING STATION</h2>
+        <h2 className="text-xl font-black text-white italic tracking-tight">DEPLOY MONITORING TEAM</h2>
         <button type="button" onClick={onCancel} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50">
           <X size={20} />
         </button>

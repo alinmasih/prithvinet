@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   Shield, 
   Map as MapIcon, 
@@ -19,22 +20,27 @@ import api from '../api/client';
 import PageBranding from '../components/PageBranding';
 
 const RegionalOfficerDashboard = () => {
+  const { id } = useParams();
   const [industries, setIndustries] = useState([]);
   const [office, setOffice] = useState(null);
   const [logs, setLogs] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [indRes, logRes, officeRes] = await Promise.all([
-          api.get('/regional/industries'),
-          api.get('/monitoring/logs'),
-          api.get('/regional/office')
+        const queryParams = id ? `?officeId=${id}` : '';
+        const [indRes, logRes, officeRes, teamRes] = await Promise.all([
+          api.get(`/regional/industries${queryParams}`),
+          api.get(`/monitoring/logs${queryParams}`),
+          api.get(`/regional/office${id ? `/${id}` : ''}`),
+          api.get(`/regional/teams${queryParams}`)
         ]);
         setIndustries(indRes.data);
         setLogs(logRes.data);
         setOffice(officeRes.data);
+        setTeams(teamRes.data);
       } catch (error) {
         console.error('Regional data sync failed:', error);
       } finally {
@@ -55,35 +61,21 @@ const RegionalOfficerDashboard = () => {
     <div className="space-y-10 animate-fade-in">
       <PageBranding title="Regional Intelligence Hub" />
        {/* Regional Header */}
-       <div className="flex flex-col lg:flex-row gap-8 items-stretch">
-          <div className="flex-1 bg-blue-500/10 border border-blue-500/20 p-10 rounded-[3rem] relative overflow-hidden group">
-             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full -translate-y-1/2 translate-x-1/2"></div>
-             <div className="relative z-10">
-                <h1 className="text-4xl lg:text-5xl font-black italic tracking-tighter uppercase mb-4">Regional <br/><span className="text-blue-500">Jurisdiction Map</span></h1>
-                <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.4em] italic mb-8">{office ? `${office.office_name} - ${office.district} Grid Oversight` : 'Syncing Jurisdictional Context...'}</p>
-                <div className="flex gap-4">
-                   <button className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs shadow-xl shadow-blue-600/20 hover:scale-105 transition-all">Mobilize Teams</button>
-                   <button className="px-8 py-3 bg-white/5 text-text-muted rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-white/10 transition-all border border-white/5">Site Inspections</button>
+       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {[
+            { label: 'Active Industries', value: industries.length, icon: Building2, color: 'text-blue-500' },
+            { label: 'Field Teams', value: '04', icon: Users, color: 'text-emerald-500' },
+            { label: 'Pending Logs', value: '12', icon: Activity, color: 'text-amber-500' },
+            { label: 'Alert Responses', value: '02', icon: AlertTriangle, color: 'text-rose-500' },
+          ].map((s, i) => (
+             <div key={i} className="glass-morphism border border-white/5 p-8 rounded-[2rem] flex flex-col justify-between hover:bg-white/5 transition-all">
+                <s.icon className={`${s.color} opacity-40`} size={28} />
+                <div className="mt-6">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{s.label}</p>
+                   <p className="text-3xl font-black italic text-white">{s.value}</p>
                 </div>
              </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-6 lg:w-[400px]">
-             {[
-               { label: 'Active Industries', value: industries.length, icon: Building2, color: 'text-blue-500' },
-               { label: 'Field Teams', value: '04', icon: Users, color: 'text-emerald-500' },
-               { label: 'Pending Logs', value: '12', icon: Activity, color: 'text-amber-500' },
-               { label: 'Alert Responses', value: '02', icon: AlertTriangle, color: 'text-rose-500' },
-             ].map((s, i) => (
-                <div key={i} className="glass-morphism border border-white/5 p-6 rounded-[2rem] flex flex-col justify-between hover:bg-white/5 transition-all">
-                   <s.icon className={`${s.color} opacity-40`} size={24} />
-                   <div className="mt-4">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-text-muted mb-1">{s.label}</p>
-                      <p className="text-xl font-black italic text-white">{s.value}</p>
-                   </div>
-                </div>
-             ))}
-          </div>
+          ))}
        </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -136,24 +128,23 @@ const RegionalOfficerDashboard = () => {
                       <Plus size={20} />
                    </button>
                 </div>
-                
-                <div className="space-y-6 flex-1">
-                   {[
-                     { name: 'Unit Alpha', status: 'Online', members: 4 },
-                     { name: 'Unit Bravo', status: 'In-Field', members: 3 },
-                     { name: 'Unit Delta', status: 'Standby', members: 4 },
-                   ].map((team, i) => (
-                      <div key={i} className="p-6 bg-white/5 border border-white/10 rounded-[2rem] hover:border-emerald-500/50 transition-all cursor-pointer">
-                         <div className="flex justify-between items-start mb-4">
-                            <h4 className="font-black text-white uppercase italic tracking-tight">{team.name}</h4>
-                            <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${team.status === 'In-Field' ? 'bg-amber-500/20 text-amber-500 animate-pulse' : 'bg-emerald-500/20 text-emerald-500'}`}>
-                               {team.status}
-                            </div>
-                         </div>
-                         <p className="text-[10px] text-text-muted font-black uppercase tracking-widest">{team.members} Registered Personnel</p>
-                      </div>
-                   ))}
-                </div>
+                                <div className="space-y-6 flex-1">
+                    {teams.length > 0 ? teams.map((team, i) => (
+                       <div key={i} className="p-6 bg-white/5 border border-white/10 rounded-[2rem] hover:border-emerald-500/50 transition-all cursor-pointer">
+                          <div className="flex justify-between items-start mb-4">
+                             <h4 className="font-black text-white uppercase italic tracking-tight">{team.team_name}</h4>
+                             <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${team.status === 'Active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                                {team.status}
+                             </div>
+                          </div>
+                          <p className="text-[10px] text-text-muted font-black uppercase tracking-widest">{team.members?.length || 0} Registered Personnel</p>
+                       </div>
+                    )) : (
+                       <div className="py-10 text-center opacity-30">
+                          <p className="font-black italic uppercase tracking-[0.2em] text-[10px]">No field units assigned.</p>
+                       </div>
+                    )}
+                 </div>
                 
                 <button className="mt-10 w-full py-5 border border-white/10 rounded-2xl text-[10px] font-black uppercase italic tracking-widest text-text-muted hover:bg-white/5 hover:text-white transition-all">
                    Full Personnel Grid

@@ -8,6 +8,7 @@ import Layout from './layout/Layout';
 import Dashboard from './pages/Dashboard';
 import LandingPage from './pages/LandingPage';
 import MonitoringDashboard from './pages/MonitoringDashboard';
+import Reports from './pages/Reports';
 
 // Basic components for routes (to be expanded)
 import AdminDashboard from './pages/AdminDashboard';
@@ -30,6 +31,8 @@ import IndustryIntimationForm from './pages/IndustryIntimationForm';
 import SubmitOfficialForm from './pages/SubmitOfficialForm';
 import MapPage from './pages/MapPage';
 import UploadReport from './pages/UploadReport';
+import ForecastingDashboard from './pages/ForecastingDashboard';
+import RegionalOfficesList from './pages/RegionalOfficesList';
 
 
 // Basic components for routes (to be expanded)
@@ -50,10 +53,11 @@ function App() {
             <Route path="/public-dashboard" element={<PublicDashboard />} />
             <Route path="/ai-copilot" element={<Layout><AICopilot /></Layout>} />
             <Route path="/simulation" element={<Layout><ThreeDSimulation /></Layout>} />
-            <Route path="/register-industry" element={<IndustryRegistrationChoice />} />
             <Route path="/register-industry/new" element={<IndustryIntimationForm />} />
             <Route path="/register-industry/submit" element={<SubmitOfficialForm />} />
+            <Route path="/register-industry" element={<IndustryRegistrationChoice />} />
             <Route path="/map" element={<MapPage />} />
+            <Route path="/forecasting" element={<Layout><ForecastingDashboard /></Layout>} />
             <Route path="/unauthorized" element={<Unauthorized />} />
 
             {/* Protected Routes */}
@@ -63,12 +67,15 @@ function App() {
               <Route path="/industries" element={<Layout><Industries /></Layout>} />
               <Route path="/water-sources" element={<Layout><WaterSources /></Layout>} />
               <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
-              <Route path="/reports" element={<Layout><MonitoringDashboard /></Layout>} />
+              <Route path="/reports" element={<Layout><Reports /></Layout>} />
+              <Route path="/reports/:type" element={<Layout><Reports /></Layout>} />
               <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
-              <Route path="/regional" element={<Layout><RegionalOfficerDashboard /></Layout>} />
+              <Route path="/regional" element={<Layout><RegionalOfficesList /></Layout>} />
+              <Route path="/regional/:id" element={<Layout><RegionalOfficerDashboard /></Layout>} />
               <Route path="/monitoring" element={<Layout><MonitoringTeamDashboard /></Layout>} />
               <Route path="/industry" element={<Layout><IndustryDashboard /></Layout>} />
               <Route path="/upload-report" element={<Layout><UploadReport /></Layout>} />
+              <Route path="/users" element={<Layout><UserManagement /></Layout>} />
               <Route path="/entities" element={<Layout><EntityManagement /></Layout>} />
               <Route path="/complaint" element={<Layout><CitizenComplaint /></Layout>} />
 
