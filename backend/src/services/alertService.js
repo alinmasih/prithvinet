@@ -1,35 +1,21 @@
-const Alert = require('../models/Alert');
-const Industry = require('../models/Industry');
+const db = require('../config/localDb');
+const { v4: uuidv4 } = require('uuid');
 
 const THRESHOLDS = {
-  Air: {
-    'PM2.5': 60,
-    'PM10': 100,
-    'SO2': 80,
-    'NO2': 80,
-    'CO': 2
-  },
-  Water: {
-    'pH': { min: 6.5, max: 8.5 },
-    'BOD': 30,
-    'COD': 250,
-    'DO': { min: 4 } // Minimum Dissolved Oxygen
-  },
-  Noise: {
-    'Daytime (Leq)': 75,
-    'Nighttime (Leq)': 70
-  }
+  Air: { 'aqi': 100, 'pm25': 60, 'pm10': 100 },
+  Water: { 'ph_level': { min: 6.5, max: 8.5 }, 'contamination_index': 50 },
+  Noise: { 'noise_db': 75 }
 };
 
 const checkAndTriggerAlerts = async (log) => {
-  const { monitoring_type, value, region, submitted_by, station, industry } = log;
+  const { monitoring_type, value, region_id, station_id, industry_id } = log;
+  const parsedValue = typeof value === 'string' ? JSON.parse(value) : value;
   const thresholds = THRESHOLDS[monitoring_type];
 
-  if (!thresholds) return;
+  if (!thresholds || !parsedValue) return;
 
   const breaches = [];
-
-  for (const [param, val] of value.entries()) {
+  for (const [param, val] of Object.entries(parsedValue)) {
     const threshold = thresholds[param];
     if (!threshold) continue;
 
@@ -52,18 +38,21 @@ const checkAndTriggerAlerts = async (log) => {
   }
 
   if (breaches.length > 0) {
+    const insertAlert = db.prepare(`
+      INSERT INTO alerts (id, type, message, severity, region_id, status, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
     for (const breach of breaches) {
-      await Alert.create({
-        alert_type: 'Pollution Exceedance',
-        parameter: breach.parameter,
-        value: breach.value,
-        limit: breach.limit,
-        location: log.location?.address || 'Unknown Location',
-        station,
-        industry,
-        region,
-        timestamp: log.timestamp
-      });
+      insertAlert.run(
+        uuidv4(),
+        'Pollution Exceedance',
+        `${monitoring_type} Pollution: ${breach.parameter} is ${breach.value} (Limit: ${breach.limit})`,
+        breach.value > breach.limit * 1.5 ? 'High' : 'Medium',
+        region_id,
+        'Open',
+        new Date().toISOString()
+      );
     }
   }
 };

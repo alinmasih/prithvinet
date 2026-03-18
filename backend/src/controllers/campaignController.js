@@ -1,60 +1,59 @@
-const Campaign = require('../models/Campaign');
+const supabase = require('../config/supabaseClient');
 
-// @desc    Create a new monitoring campaign
-// @route   POST /api/campaigns
-// @access  Private (Admin, Regional Officer)
-const createCampaign = async (req, res) => {
-  try {
-    const { name, region, start_date, end_date, targets } = req.body;
-
-    const campaign = await Campaign.create({
-      name,
-      region: region || req.user.region,
-      start_date,
-      end_date,
-      targets
-    });
-
-    res.status(201).json(campaign);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Get all campaigns (filtered by region for Regional Officer)
-// @route   GET /api/campaigns
-// @access  Private
 const getCampaigns = async (req, res) => {
   try {
-    let query = {};
-    if (req.user.role === 'Regional Officer') {
-      query.region = req.user.region;
-    }
-
-    const campaigns = await Campaign.find(query).populate('region', 'name');
-    res.json(campaigns);
+    const { data: campaigns, error } = await supabase
+      .from('monitoring_logs')
+      .select('*')
+      .eq('monitoring_type', 'Campaign');
+    
+    if (error) throw error;
+    res.json((campaigns || []).map(c => ({ ...c, _id: c.id, ...c.value })));
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// @desc    Update campaign status
-// @route   PUT /api/campaigns/:id
-// @access  Private (Admin, Regional Officer)
+const createCampaign = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('monitoring_logs')
+      .insert([{
+        monitoring_type: 'Campaign',
+        value: req.body,
+        timestamp: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json({ ...data, _id: data.id });
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid campaign data', error: error.message });
+  }
+};
+
 const updateCampaign = async (req, res) => {
   try {
-    const campaign = await Campaign.findById(req.params.id);
+    const { data, error } = await supabase
+      .from('monitoring_logs')
+      .update({
+        value: req.body,
+        timestamp: new Date().toISOString()
+      })
+      .eq('id', req.params.id)
+      .select()
+      .single();
 
-    if (campaign) {
-      campaign.status = req.body.status || campaign.status;
-      const updatedCampaign = await campaign.save();
-      res.json(updatedCampaign);
-    } else {
-      res.status(404).json({ message: 'Campaign not found' });
-    }
+    if (error) throw error;
+    res.json({ ...data, _id: data.id });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: 'Error updating campaign', error: error.message });
   }
 };
 
-module.exports = { createCampaign, getCampaigns, updateCampaign };
+module.exports = {
+  getCampaigns,
+  createCampaign,
+  updateCampaign
+};

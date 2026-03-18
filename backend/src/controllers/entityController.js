@@ -1,9 +1,14 @@
-const Entity = require('../models/Entity');
+const supabase = require('../config/supabaseClient');
 
 const getEntities = async (req, res) => {
   try {
-    const entities = await Entity.find({});
-    res.json(entities);
+    const { data: entities, error } = await supabase
+      .from('monitoring_logs')
+      .select('*')
+      .eq('monitoring_type', 'Entity');
+    
+    if (error) throw error;
+    res.json((entities || []).map(e => ({ ...e, _id: e.id, ...e.value })));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -11,12 +16,16 @@ const getEntities = async (req, res) => {
 
 const getEntityById = async (req, res) => {
   try {
-    const entity = await Entity.findById(req.params.id);
-    if (entity) {
-      res.json(entity);
-    } else {
-      res.status(404).json({ message: 'Entity not found' });
+    const { data: entity, error } = await supabase
+      .from('monitoring_logs')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error || !entity) {
+      return res.status(404).json({ message: 'Entity not found' });
     }
+    res.json({ ...entity, _id: entity.id, ...entity.value });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -24,11 +33,21 @@ const getEntityById = async (req, res) => {
 
 const createEntity = async (req, res) => {
   try {
-    const entity = await Entity.create(req.body);
+    const { data, error } = await supabase
+      .from('monitoring_logs')
+      .insert([{
+        monitoring_type: 'Entity',
+        value: req.body,
+        timestamp: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
     res.status(201).json({
       success: true,
       message: 'Entity created successfully',
-      data: entity
+      data: { ...data, _id: data.id }
     });
   } catch (error) {
     res.status(400).json({ message: 'Invalid entity data', error: error.message });
@@ -37,16 +56,21 @@ const createEntity = async (req, res) => {
 
 const updateEntity = async (req, res) => {
   try {
-    const entity = await Entity.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true });
-    if (entity) {
-      res.json({
-        success: true,
-        message: 'Entity updated successfully',
-        data: entity
-      });
-    } else {
-      res.status(404).json({ message: 'Entity not found' });
+    const { data, error } = await supabase
+      .from('monitoring_logs')
+      .update({ value: req.body })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ message: 'Entity not found' });
     }
+    res.json({
+      success: true,
+      message: 'Entity updated successfully',
+      data: { ...data, _id: data.id }
+    });
   } catch (error) {
     res.status(400).json({ message: 'Invalid entity data', error: error.message });
   }
@@ -54,12 +78,13 @@ const updateEntity = async (req, res) => {
 
 const deleteEntity = async (req, res) => {
   try {
-    const entity = await Entity.findByIdAndDelete(req.params.id);
-    if (entity) {
-      res.json({ success: true, message: 'Entity deleted successfully' });
-    } else {
-      res.status(404).json({ message: 'Entity not found' });
-    }
+    const { error } = await supabase
+      .from('monitoring_logs')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Entity deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

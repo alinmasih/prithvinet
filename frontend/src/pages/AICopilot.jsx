@@ -16,7 +16,7 @@ import PageBranding from '../components/PageBranding';
 
 const AICopilot = () => {
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hello! I am PrithviNet AI Copilot. I analyze Chhattisgarh\'s environmental data in real-time. How can I assist you with policy simulation or data analysis today?' }
+    { role: 'assistant', content: 'Hello! I am PrithviNet AI Copilot. While I specialize in Chhattisgarh\'s environmental data, I can now assist you with any general question or system analysis. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -118,7 +118,7 @@ const AICopilot = () => {
           <form onSubmit={handleSend} className="relative mt-auto">
             <input 
               type="text" 
-              placeholder="Ask AI about Raipur's environment..."
+              placeholder="Ask AI anything (e.g. 'What is the capital of India?' or 'Summarize recent alerts')"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-2xl pl-5 md:pl-6 pr-14 md:pr-16 py-4 md:py-5 outline-none focus:border-primary transition-all text-sm font-medium text-white placeholder:text-text-muted"

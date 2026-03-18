@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Shield,
@@ -62,13 +62,19 @@ const Login = () => {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2"></div>
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/10 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2"></div>
 
-      <div className="w-full max-w-md relative z-10 animate-fade-in">
-        <div className="text-center mb-10">
-          <div className="inline-flex w-16 h-16 bg-primary rounded-2xl items-center justify-center shadow-2xl shadow-primary/30 mb-6">
-            <Shield className="text-white" size={32} />
+      <div className="w-full max-w-md relative z-10 animate-fade-in px-4 sm:px-0">
+        <div className="text-center mb-8 md:mb-10">
+          <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted hover:text-white transition-colors mb-6 group">
+            <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
+            Back to Home
+          </Link>
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/30 mb-6 transition-transform hover:scale-110 duration-500">
+              <Shield className="text-white" size={32} />
+            </div>
+            <h1 className="text-4xl font-black tracking-tight mb-2">Prithvi<span className="text-primary">Net</span></h1>
+            <p className="text-text-muted font-medium">Environmental Monitoring Portal</p>
           </div>
-          <h1 className="text-4xl font-black tracking-tight mb-2">Prithvi<span className="text-primary">Net</span></h1>
-          <p className="text-text-muted font-medium">Environmental Monitoring Portal</p>
         </div>
 
         <div className="glass-morphism rounded-[2.5rem] p-10 border border-white/10 shadow-2xl">

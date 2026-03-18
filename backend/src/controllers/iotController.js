@@ -1,5 +1,5 @@
 const axios = require('axios');
-const SensorData = require('../models/SensorData');
+const supabase = require('../config/supabaseClient');
 
 // @desc    Get latest IoT sensor metrics (Proxy to external Render node)
 // @route   GET /api/iot/latest
@@ -10,19 +10,35 @@ const getLatestSensorData = async (req, res) => {
     const externalData = response.data;
     
     // Optional: Save to local DB for history/cache
-    await SensorData.create({
-      ...externalData,
-      station_id: 'IoT-NODE-01',
-      timestamp: new Date()
-    }).catch(err => console.error('Failed to cache sensor data:', err.message));
+    const { error: insertError } = await supabase
+      .from('sensor_data')
+      .insert([
+        {
+          station_id: 'IoT-NODE-01',
+          air_quality_ppm: externalData.air_quality_ppm,
+          co_ppm: externalData.co_ppm,
+          smoke_ppm: externalData.smoke_ppm,
+          noise_db: externalData.noise_db,
+          turbidity_ntu: externalData.turbidity_ntu,
+          timestamp: new Date().toISOString()
+        }
+      ]);
+    
+    if (insertError) console.error('Failed to cache sensor data:', insertError.message);
 
     res.json(externalData);
   } catch (error) {
     console.warn('External IoT sync failed, falling back to cached/simulated data.');
     
     // Fallback to latest cached data
-    const cachedData = await SensorData.findOne().sort({ timestamp: -1 });
-    if (cachedData) {
+    const { data: cachedData, error: fetchError } = await supabase
+      .from('sensor_data')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (cachedData && !fetchError) {
       return res.json(cachedData);
     }
 

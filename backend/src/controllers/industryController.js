@@ -1,122 +1,118 @@
-const Industry = require('../models/Industry');
-const IndustryForm = require('../models/IndustryForm');
+const db = require('../config/localDb');
 const { generateWhiteCategoryPDF } = require('../services/pdfService');
 const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
+
+// Helper to map industry for frontend
+const mapIndustry = (ind) => {
+  if (!ind) return null;
+  return {
+    ...ind,
+    _id: ind.id,
+    industryName: ind.industry_name,
+    industryType: ind.industry_type,
+    ownerName: ind.owner_name,
+    approvalStatus: ind.approval_status,
+    location: {
+      type: 'Point',
+      coordinates: [ind.location_lng || 81.63, ind.location_lat || 21.25]
+    }
+  };
+};
 
 // @desc    Get all industries
-// @route   GET /api/industries
-// @access  Private
 const getIndustries = async (req, res) => {
   try {
-    const industries = await Industry.find({});
-    res.json(industries);
+    const industries = db.prepare('SELECT * FROM industries').all();
+    res.json(industries.map(mapIndustry));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 // @desc    Get single industry
-// @route   GET /api/industries/:id
-// @access  Private
 const getIndustryById = async (req, res) => {
   try {
-    const industry = await Industry.findById(req.params.id);
-    if (industry) {
-      res.json(industry);
-    } else {
-      res.status(404).json({ message: 'Industry not found' });
-    }
+    const industry = db.prepare('SELECT * FROM industries WHERE id = ?').get(req.params.id);
+    if (!industry) return res.status(404).json({ message: 'Industry not found' });
+    res.json(mapIndustry(industry));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// @desc    Create an industry
-// @route   POST /api/industries
-// @access  Private/Admin
+// @desc    Create new industry
 const createIndustry = async (req, res) => {
   try {
-    const industry = await Industry.create(req.body);
-    res.status(201).json({
-      success: true,
-      message: 'Industry registered successfully',
-      data: industry
-    });
+    const id = uuidv4();
+    const { industry_name, address, product_name, product_activity, district, location_lat, location_lng, industry_type } = req.body;
+    
+    db.prepare(`
+      INSERT INTO industries (id, industry_name, address, product_name, product_activity, district, location_lat, location_lng, industry_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, industry_name, address, product_name, product_activity, district, location_lat, location_lng, industry_type || 'Other');
+
+    const industry = db.prepare('SELECT * FROM industries WHERE id = ?').get(id);
+    res.status(201).json(mapIndustry(industry));
   } catch (error) {
-    res.status(400).json({ message: 'Invalid industry data', error: error.message });
+    res.status(400).json({ message: 'Invalid data', error: error.message });
   }
 };
 
 // @desc    Update industry
-// @route   PUT /api/industries/:id
-// @access  Private/Admin
 const updateIndustry = async (req, res) => {
   try {
-    const industry = await Industry.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true });
-    if (industry) {
-      res.json({
-        success: true,
-        message: 'Industry updated successfully',
-        data: industry
-      });
-    } else {
-      res.status(404).json({ message: 'Industry not found' });
-    }
+    const fields = Object.keys(req.body).map(k => `${k} = ?`).join(', ');
+    const values = Object.values(req.body);
+    values.push(req.params.id);
+
+    db.prepare(`UPDATE industries SET ${fields} WHERE id = ?`).run(...values);
+    const industry = db.prepare('SELECT * FROM industries WHERE id = ?').get(req.params.id);
+    res.json(mapIndustry(industry));
   } catch (error) {
-    res.status(400).json({ message: 'Invalid industry data', error: error.message });
+    res.status(400).json({ message: 'Update failed', error: error.message });
   }
 };
 
 // @desc    Delete industry
-// @route   DELETE /api/industries/:id
-// @access  Private/Admin
 const deleteIndustry = async (req, res) => {
   try {
-    const industry = await Industry.findByIdAndDelete(req.params.id);
-    if (industry) {
-      res.json({ success: true, message: 'Industry deleted successfully' });
-    } else {
-      res.status(404).json({ message: 'Industry not found' });
-    }
+    db.prepare('DELETE FROM industries WHERE id = ?').run(req.params.id);
+    res.json({ success: true, message: 'Industry deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 // @desc    Create Industry Intimation Form & Generate PDF
-// @route   POST /api/industry/create-form
-// @access  Public
 const createIntimationForm = async (req, res) => {
   const formData = req.body;
-  
   try {
-    // Generate Reference Number: WC-YYYYMMDD-XXXXXXXX
     const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const random = crypto.randomBytes(4).toString('hex').toUpperCase();
     const referenceNumber = `WC-${date}-${random}`;
+    const industryId = uuidv4();
+    const formId = uuidv4();
 
-    // Generate PDF
     const pdfBytes = await generateWhiteCategoryPDF(formData, referenceNumber);
 
-    // Create Industry (Pending Approval)
-    const industry = await Industry.create({
-      ...formData,
-      approval_status: 'Pending',
-      industryCategory: 'White'
-    });
+    const lat = formData.location?.coordinates?.[1] || 21.25;
+    const lng = formData.location?.coordinates?.[0] || 81.63;
 
-    // Save Form Metadata
-    await IndustryForm.create({
-      form_reference: referenceNumber,
-      industry_id: industry._id,
-      form_data: formData,
-      status: 'Submitted'
-    });
+    db.prepare(`
+      INSERT INTO industries (id, industry_name, address, product_name, product_activity, district, location_lat, location_lng, industry_category, approval_status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(industryId, formData.industry_name, formData.address, formData.product_name, formData.product_activity, formData.district, lat, lng, 'White', 'Pending');
+
+    db.prepare(`
+      INSERT INTO industry_forms (id, form_reference, industry_id, form_data, status)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(formId, referenceNumber, industryId, JSON.stringify(formData), 'Submitted');
 
     res.status(201).json({
       success: true,
       referenceNumber,
-      industryId: industry._id,
+      industryId,
       pdfBase64: Buffer.from(pdfBytes).toString('base64')
     });
   } catch (error) {
@@ -124,49 +120,26 @@ const createIntimationForm = async (req, res) => {
   }
 };
 
-// @desc    Submit Signed Official Form
-// @route   POST /api/industry/submit-form
-// @access  Public
 const submitSignedForm = async (req, res) => {
-  const { formReference, applicantName, mobile, email, district } = req.body;
-  
+  const { formReference } = req.body;
   try {
-    const form = await IndustryForm.findOne({ form_reference: formReference });
-    if (!form) {
-      return res.status(404).json({ message: 'Invalid Reference Number' });
-    }
+    const form = db.prepare('SELECT * FROM industry_forms WHERE form_reference = ?').get(formReference);
+    if (!form) return res.status(404).json({ message: 'Invalid Reference Number' });
 
-    // Update form with uploaded file paths (Multer provides these)
-    form.status = 'Signed';
-    
-    // In a real app, we'd save req.files.signedForm[0].path etc.
-    if (req.files) {
-      if (req.files.signedForm) form.pdf_url = req.files.signedForm[0].path;
-      // You could also save additional uploads here
-    }
+    const pdfUrl = req.files?.signedForm?.[0]?.path || null;
+    db.prepare('UPDATE industry_forms SET status = ?, pdf_url = ? WHERE id = ?').run('Signed', pdfUrl, form.id);
 
-    await form.save();
-
-    res.json({ 
-      success: true, 
-      message: 'Official form submitted for CECB verification' 
-    });
+    res.json({ success: true, message: 'Official form submitted for CECB verification' });
   } catch (error) {
     res.status(500).json({ message: 'Submission failed', error: error.message });
   }
 };
 
-// @desc    Get industry profile for logged in user
-// @route   GET /api/industry/my-profile
-// @access  Private/Industry User
 const getMyIndustryProfile = async (req, res) => {
   try {
-    const industry = await Industry.findById(req.user.industry_id).populate('regional_officer_id', 'name');
-    if (industry) {
-      res.json(industry);
-    } else {
-      res.status(404).json({ message: 'Industry profile not found' });
-    }
+    const industry = db.prepare('SELECT * FROM industries WHERE id = ?').get(req.user.industry_id);
+    if (!industry) return res.status(404).json({ message: 'Industry profile not found' });
+    res.json(mapIndustry(industry));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

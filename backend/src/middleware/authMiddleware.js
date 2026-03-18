@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const db = require('../config/localDb');
 
 const protect = async (req, res, next) => {
   let token;
@@ -9,33 +9,39 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
-      // Development Bypass Handling
-      if (decoded.userId === 'dev_user_id') {
-        req.user = {
-          _id: 'dev_user_id',
-          name: 'Developer Admin',
-          email: 'admin@prithvinet.gov.in',
-          role: 'Admin'
-        };
-      } else {
-        req.user = await User.findById(decoded.userId).select('-password');
-      }
-      
-      if (!req.user) {
-        return res.status(401).json({ message: 'User not found' });
+      const userId = decoded.userId || decoded.id;
+      console.log('DEBUG: Auth Middleware - userId from token:', userId);
+
+      // 1. Development/System Bypass
+      if (userId === '00000000-0000-0000-0000-000000000000') {
+        const admin = db.prepare("SELECT * FROM users WHERE role = 'Admin' LIMIT 1").get();
+        if (admin) {
+           console.log('DEBUG: Dev bypass active for admin:', admin.id);
+           req.user = { ...admin, _id: admin.id };
+           return next();
+        }
       }
 
-      next();
+      // 2. Local DB Lookup
+      const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+      console.log('DEBUG: User found in DB:', user ? user.id : 'null');
+      
+      if (!user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+
+      req.user = {
+        ...user,
+        _id: user.id // Bridge for legacy frontend components
+      };
+      
+      return next();
+
     } catch (error) {
+      console.error('Auth Middleware Token Failure:', error.message);
       if (error.name === 'TokenExpiredError') {
-        console.warn('Auth Failure: Token expired');
         return res.status(401).json({ message: 'Token expired' });
       }
-      if (error.name === 'JsonWebTokenError') {
-        console.warn('Auth Failure: Malformed or invalid signature');
-        return res.status(401).json({ message: 'Invalid token' });
-      }
-      console.error('Auth Middleware Error:', error);
       res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }

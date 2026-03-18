@@ -12,7 +12,7 @@ const Layout = ({ children }) => {
   if (!isAuthenticated) return <>{children}</>;
 
   return (
-    <div className="flex min-h-screen bg-background transition-colors duration-500">
+    <div className="flex h-screen overflow-hidden bg-background transition-colors duration-500">
       <Sidebar isOpen={isSidebarOpen} close={() => setIsSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0">
         <Navbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />

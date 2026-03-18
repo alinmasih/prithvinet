@@ -1,5 +1,4 @@
 const fs = require('fs');
-const PollutionReading = require('../models/PollutionReading');
 
 /**
  * Parses a water pollution CSV file and returns the data

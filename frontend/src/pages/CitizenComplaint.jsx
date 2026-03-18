@@ -9,7 +9,10 @@ const CitizenComplaintForm = () => {
     location: '',
     district: '',
     description: '',
-    anonymous: false
+    anonymous: false,
+    reporter_name: '',
+    reporter_email: '',
+    reporter_phone: ''
   });
   const [files, setFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,7 +63,8 @@ const CitizenComplaintForm = () => {
         setSubmitted(true);
         // alert(`Complaint registered successfully. Your Tracking ID: ${data._id}`);
       } else {
-        alert('Failed to submit complaint. Please login first.');
+        const errorData = await response.json();
+        alert(`Failed to submit complaint: ${errorData.message || 'Please check your input.'}`);
       }
     } catch (error) {
       console.error('Error submitting complaint:', error);
@@ -109,6 +113,43 @@ const CitizenComplaintForm = () => {
              <Shield size={120} className="text-primary" />
           </div>
           <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+            {!formData.anonymous && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               <div className="space-y-3">
+                 <label className="text-xs font-black text-text-muted uppercase tracking-[0.2em]">Full Name</label>
+                 <input 
+                   type="text"
+                   name="reporter_name"
+                   placeholder="Your Name"
+                   value={formData.reporter_name}
+                   onChange={handleChange}
+                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary transition-all text-white font-bold"
+                 />
+               </div>
+               <div className="space-y-3">
+                 <label className="text-xs font-black text-text-muted uppercase tracking-[0.2em]">Email Address</label>
+                 <input 
+                   type="email"
+                   name="reporter_email"
+                   placeholder="your@email.com"
+                   value={formData.reporter_email}
+                   onChange={handleChange}
+                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary transition-all text-white font-bold"
+                 />
+               </div>
+               <div className="space-y-3">
+                 <label className="text-xs font-black text-text-muted uppercase tracking-[0.2em]">Mobile No.</label>
+                 <input 
+                   type="tel"
+                   name="reporter_phone"
+                   placeholder="+91..."
+                   value={formData.reporter_phone}
+                   onChange={handleChange}
+                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary transition-all text-white font-bold"
+                 />
+               </div>
+            </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <label className="text-xs font-black text-text-muted uppercase tracking-[0.2em]">Offense Category</label>

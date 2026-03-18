@@ -66,16 +66,36 @@ const PublicDashboard = () => {
     fetchData();
   }, []);
 
-  // Mock data for trends if real data is sparse
-  const trendData = [
-    { time: '08:00', pm25: 45, pm10: 78, noise: 55 },
-    { time: '10:00', pm25: 52, pm10: 85, noise: 62 },
-    { time: '12:00', pm25: 68, pm10: 110, noise: 70 },
-    { time: '14:00', pm25: 75, pm10: 125, noise: 72 },
-    { time: '16:00', pm25: 62, pm10: 105, noise: 65 },
-    { time: '18:00', pm25: 55, pm10: 92, noise: 58 },
-    { time: '20:00', pm25: 48, pm10: 82, noise: 52 },
-  ];
+  // Helper to format time
+  const getTimeAgo = (timestamp) => {
+    const seconds = Math.floor((new Date() - new Date(timestamp)) / 1000);
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} mins ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+    return `${Math.floor(seconds / 86400)} days ago`;
+  };
+
+  // Calculate averages for stats
+  const airAvg = pollutionData.air.length > 0 ? Math.round(pollutionData.air.reduce((acc, curr) => acc + (curr.value?.aqi || 0), 0) / pollutionData.air.length) : 68;
+  const waterAvg = pollutionData.water.length > 0 ? (pollutionData.water.reduce((acc, curr) => acc + (curr.value?.ph_level || 0), 0) / pollutionData.water.length).toFixed(1) : 7.2;
+
+  // Real-time trend data derivation
+  const trendData = pollutionData.air.length > 0 
+    ? pollutionData.air.slice(0, 7).reverse().map(l => ({
+        time: new Date(l.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        pm25: l.value?.pm25 || 0,
+        pm10: l.value?.pm10 || 0,
+        noise: l.value?.noise_db || 0
+      }))
+    : [
+        { time: '08:00', pm25: 45, pm10: 78, noise: 55 },
+        { time: '10:00', pm25: 52, pm10: 85, noise: 62 },
+        { time: '12:00', pm25: 68, pm10: 110, noise: 70 },
+        { time: '14:00', pm25: 75, pm10: 125, noise: 72 },
+        { time: '16:00', pm25: 62, pm10: 105, noise: 65 },
+        { time: '18:00', pm25: 55, pm10: 92, noise: 58 },
+        { time: '20:00', pm25: 48, pm10: 82, noise: 52 },
+      ];
 
   return (
     <div className="min-h-screen bg-[#060608] text-white p-6 lg:p-12 animate-fade-in custom-scrollbar">
@@ -127,13 +147,16 @@ const PublicDashboard = () => {
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
               />
-              {pollutionData.stations?.map((station, i) => (
-                station.location?.coordinates && (
-                  <Marker key={i} position={[station.location.coordinates[1], station.location.coordinates[0]]}>
+              {/* Combine monitoring data for map display */}
+              {[...pollutionData.air, ...pollutionData.water, ...pollutionData.noise].map((station, i) => (
+                station.value?.lat && station.value?.lng && (
+                  <Marker key={i} position={[station.value.lat, station.value.lng]}>
                     <Popup className="custom-popup">
                        <div className="p-2">
-                          <p className="font-black italic uppercase text-xs mb-1">{station.name}</p>
-                          <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-widest">AQI: {station.lastReading || 'Stable'}</p>
+                          <p className="font-black italic uppercase text-xs mb-1">{station.location}</p>
+                          <p className={`text-[9px] font-bold uppercase tracking-widest ${station.monitoring_type === 'Air' ? 'text-emerald-400' : 'text-blue-400'}`}>
+                            {station.monitoring_type}: {station.value.aqi || station.value.ph_level || station.value.noise_db}
+                          </p>
                        </div>
                     </Popup>
                   </Marker>
@@ -182,11 +205,11 @@ const PublicDashboard = () => {
               <div className="grid grid-cols-2 gap-4 mt-8">
                  <div className="bg-white/5 p-6 rounded-3xl border border-white/5 group hover:bg-emerald-500/10 transition-all cursor-pointer">
                     <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mb-2">AQI AVG</p>
-                    <p className="text-3xl font-black italic text-emerald-500">68</p>
+                    <p className="text-3xl font-black italic text-emerald-500">{airAvg}</p>
                  </div>
                  <div className="bg-white/5 p-6 rounded-3xl border border-white/5 group hover:bg-blue-500/10 transition-all cursor-pointer">
                     <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mb-2">Water (pH)</p>
-                    <p className="text-3xl font-black italic text-blue-500">7.2</p>
+                    <p className="text-3xl font-black italic text-blue-500">{waterAvg}</p>
                  </div>
               </div>
            </div>
@@ -195,10 +218,10 @@ const PublicDashboard = () => {
         {/* Dynamic Monitoring Sections */}
         <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8">
            {[
-             { title: 'Air Monitoring', icon: Activity, color: 'text-emerald-500', data: pollutionData.air.slice(0, 5) },
-             { title: 'Water Quality', icon: Waves, color: 'text-blue-500', data: pollutionData.water.slice(0, 5) },
-             { title: 'Noise Pollution', icon: Volume2, color: 'text-purple-500', data: pollutionData.noise.slice(0, 5) },
-           ].map((sec, i) => (sec.data.length > 0 || true) && (
+             { title: 'Air Monitoring', icon: Activity, color: 'text-emerald-500', data: pollutionData.air.slice(0, 5), key: 'aqi' },
+             { title: 'Water Quality', icon: Waves, color: 'text-blue-500', data: pollutionData.water.slice(0, 5), key: 'ph_level' },
+             { title: 'Noise Pollution', icon: Volume2, color: 'text-purple-500', data: pollutionData.noise.slice(0, 5), key: 'noise_db' },
+           ].map((sec, i) => (
               <div key={i} className="glass-morphism rounded-[3rem] p-8 border border-white/5 group">
                  <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
@@ -211,18 +234,20 @@ const PublicDashboard = () => {
                  </div>
                  
                  <div className="space-y-4">
-                    {(sec.data.length > 0 ? sec.data : [1,2,3]).map((log, idx) => (
+                    {sec.data.length > 0 ? sec.data.map((log, idx) => (
                        <div key={idx} className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/5 transition-colors">
                           <div className="flex items-center gap-4">
-                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                             <div className={`w-2 h-2 rounded-full animate-pulse transition-colors ${log.value[sec.key] > 100 ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
                              <div>
-                                <p className="text-xs font-black uppercase italic">{log.remarks || 'Regional Station A1'}</p>
-                                <p className="text-[9px] text-text-muted uppercase tracking-widest font-black">2 mins ago</p>
+                                <p className="text-xs font-black uppercase italic">{log.location}</p>
+                                <p className="text-[9px] text-text-muted uppercase tracking-widest font-black">{getTimeAgo(log.timestamp)}</p>
                              </div>
                           </div>
-                          <p className={`text-sm font-black italic ${sec.color}`}>{Math.floor(Math.random() * 50) + 10}</p>
+                          <p className={`text-sm font-black italic ${sec.color}`}>{log.value[sec.key]}</p>
                        </div>
-                    ))}
+                    )) : (
+                      <p className="text-xs text-text-muted italic py-4">Synchronizing with field telemetry...</p>
+                    )}
                  </div>
               </div>
            ))}

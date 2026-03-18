@@ -31,11 +31,10 @@ import IndustryIntimationForm from './pages/IndustryIntimationForm';
 import SubmitOfficialForm from './pages/SubmitOfficialForm';
 import MapPage from './pages/MapPage';
 import UploadReport from './pages/UploadReport';
-import ForecastingDashboard from './pages/ForecastingDashboard';
 import RegionalOfficesList from './pages/RegionalOfficesList';
 
 
-// Basic components for routes (to be expanded)
+import CityMapPage from './pages/CityMapPage';
 import Register from './pages/Register';
 
 const Unauthorized = () => <div className="p-10 text-white text-rose-500">Unauthorized Access</div>;
@@ -48,24 +47,21 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/citymap" element={<CityMapPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/public-dashboard" element={<PublicDashboard />} />
             <Route path="/ai-copilot" element={<Layout><AICopilot /></Layout>} />
-            <Route path="/simulation" element={<Layout><ThreeDSimulation /></Layout>} />
             <Route path="/register-industry/new" element={<IndustryIntimationForm />} />
             <Route path="/register-industry/submit" element={<SubmitOfficialForm />} />
             <Route path="/register-industry" element={<IndustryRegistrationChoice />} />
             <Route path="/map" element={<MapPage />} />
-            <Route path="/forecasting" element={<Layout><ForecastingDashboard /></Layout>} />
             <Route path="/unauthorized" element={<Unauthorized />} />
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/stations" element={<Layout><Stations /></Layout>} />
               <Route path="/industries" element={<Layout><Industries /></Layout>} />
-              <Route path="/water-sources" element={<Layout><WaterSources /></Layout>} />
               <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
               <Route path="/reports" element={<Layout><Reports /></Layout>} />
               <Route path="/reports/:type" element={<Layout><Reports /></Layout>} />

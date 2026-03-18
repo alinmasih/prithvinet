@@ -33,6 +33,8 @@ const ForecastingDashboard = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(null);
+  const [aiInsight, setAiInsight] = useState('Data collection in progress...');
+
 
   const fetchForecasts = async (type) => {
     setLoading(true);
@@ -41,6 +43,7 @@ const ForecastingDashboard = () => {
       const response = await api.get(`/forecasting?type=${type}`);
       if (response.data.error) throw new Error(response.data.error);
       setForecasts(response.data.forecasts || []);
+      setAiInsight(response.data.ai_insight || 'No insight available for current data profile.');
     } catch (err) {
       console.error("Fetch Forecasts Error:", err);
       setError("Failed to fetch forecasts. Please check AI service connectivity.");
@@ -99,7 +102,7 @@ const ForecastingDashboard = () => {
                  <h1 className="text-4xl lg:text-5xl font-black italic tracking-tighter uppercase leading-none">
                     Multi-Step <span className="text-blue-500">Forecasting</span>
                  </h1>
-                 <p className="text-[10px] uppercase font-black tracking-[0.5em] text-text-muted mt-2">Computational Intelligence • Predictive Modeling • 24-72h Horizon</p>
+                 <p className="text-[10px] uppercase font-black tracking-[0.5em] text-text-muted mt-2">Professional ML Fusion • Open-Meteo Models • 24-72h Horizon</p>
               </div>
            </div>
         </div>
@@ -132,7 +135,7 @@ const ForecastingDashboard = () => {
                     <h3 className="text-xl font-black uppercase italic tracking-tight flex items-center gap-3">
                        <Activity className="text-blue-500" size={24} /> {activeType} Quantitative Projection
                     </h3>
-                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-1">Weighted moving average modeling with 95% confidence bands</p>
+                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-1">Hybrid Blending: Local Stats (40%) + Open-Meteo ML (60%)</p>
                  </div>
                  
                  <div className="flex items-center gap-4">
@@ -336,8 +339,15 @@ const ForecastingDashboard = () => {
               </div>
 
               <div className="mt-8 p-6 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
+                 <h4 className="text-[10px] font-black uppercase text-blue-500 mb-2">AI Forecasting Insight</h4>
+                 <p className="text-[11px] text-white font-medium leading-relaxed italic border-l-2 border-blue-500 pl-4 py-2 bg-blue-500/5 rounded-r-xl">
+                   "{aiInsight}"
+                 </p>
+              </div>
+
+              <div className="mt-8 p-6 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
                  <p className="text-[10px] text-text-muted uppercase font-black leading-relaxed">
-                   Forecast logic is derived from a fusion of <span className="text-blue-400">IoT telemetry</span>, <span className="text-blue-400">Regional Monitoring Station logs</span>, and <span className="text-blue-400">Industrial IoT feeds</span>.
+                   Forecast logic is derived from a fusion of <span className="text-blue-400">IoT telemetry</span>, <span className="text-blue-400">WAQI Global Feed</span>, and <span className="text-blue-400">Open-Meteo ML Fusion</span>.
                  </p>
               </div>
            </div>

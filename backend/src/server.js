@@ -3,12 +3,18 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const initSqlite = require('./config/initSqlite');
 const { updateAllEnvironmentalData } = require('./services/dataFetcher');
 
 const app = express();
 
-// Connect to Database
+// Initialize Local Database
+initSqlite();
+
+// Connect to Legacy DB (Optional/Fallback)
 connectDB();
+
+// Middleware (DB is Supabase, initialized in config)
 
 // Middleware
 app.use(cors());
@@ -48,7 +54,6 @@ app.use('/api/public', require('./routes/publicRoutes'));
 app.use('/api/map', require('./routes/mapRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/iot', require('./routes/iotRoutes'));
-app.use('/api/forecasting', require('./routes/forecastingRoutes'));
 
 // Serve Static Files from Frontend
 const distPath = path.resolve(__dirname, '..', '..', 'frontend', 'dist');

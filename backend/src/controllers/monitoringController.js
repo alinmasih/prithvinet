@@ -1,4 +1,4 @@
-const MonitoringLog = require('../models/MonitoringLog');
+const supabase = require('../config/supabaseClient');
 const { checkAndTriggerAlerts } = require('../services/alertService');
 
 // @desc    Submit monitoring log (Air/Water/Noise)
@@ -9,19 +9,25 @@ const submitMonitoringLog = async (req, res) => {
   const { location, value, remarks } = req.body;
 
   try {
-    const log = await MonitoringLog.create({
-      monitoring_type: type.charAt(0).toUpperCase() + type.slice(1),
-      location,
-      value,
-      submitted_by: req.user._id,
-      region: req.user.assigned_region,
-      remarks
-    });
+    const { data: log, error } = await supabase
+      .from('monitoring_logs')
+      .insert([{
+        monitoring_type: type.charAt(0).toUpperCase() + type.slice(1),
+        location,
+        value,
+        submitted_by: req.user.id || req.user._id,
+        region_id: req.user.assigned_region,
+        remarks
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
 
     // Trigger alert engine (non-blocking)
     checkAndTriggerAlerts(log).catch(err => console.error('Alert engine error:', err));
 
-    res.status(201).json(log);
+    res.status(201).json({ ...log, _id: log.id });
   } catch (error) {
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
@@ -32,24 +38,38 @@ const submitMonitoringLog = async (req, res) => {
 // @query   type=Air|Water|Noise
 const getRecentLogs = async (req, res) => {
   const { type } = req.query;
-  const query = {};
-  if (type) query.monitoring_type = type;
-
-  // Filter by officeId if provided (Admin viewing specific office)
-  if (req.query.officeId) {
-    query.region = req.query.officeId;
-  } else if (req.user.role === 'Regional Officer') {
-    // Regional Officers only see logs from their own jurisdiction by default
-    query.region = req.user.assigned_region;
-  }
-
+  
   try {
-    const logs = await MonitoringLog.find(query)
-      .sort({ timestamp: -1 })
-      .limit(50)
-      .populate('submitted_by', 'name');
-    res.json(logs);
+    let query = supabase
+      .from('monitoring_logs')
+      .select('*, submitted_by:users(name)')
+      .order('timestamp', { ascending: false })
+      .limit(50);
+
+    if (type) {
+      query = query.eq('monitoring_type', type);
+    }
+
+    // Filter by officeId if provided (Admin viewing specific office)
+    if (req.query.officeId) {
+      query = query.eq('region_id', req.query.officeId);
+    } else if (req.user && req.user.role === 'Regional Officer') {
+      query = query.eq('region_id', req.user.assigned_region);
+    }
+
+    const { data: logs, error } = await query;
+    if (error) throw error;
+
+    // Map _id and populate submitted_by for frontend
+    const mappedLogs = (logs || []).map(l => ({
+      ...l,
+      _id: l.id,
+      submitted_by: l.submitted_by ? { name: l.submitted_by.name, _id: l.submitted_by_id } : null
+    }));
+
+    res.json(mappedLogs);
   } catch (error) {
+    console.error('getRecentLogs error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };

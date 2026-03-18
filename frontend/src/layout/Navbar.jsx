@@ -10,9 +10,9 @@ const Navbar = ({ toggleSidebar }) => {
       <div className="flex items-center gap-4">
         <button 
           onClick={toggleSidebar}
-          className="lg:hidden p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
+          className="lg:hidden p-2.5 bg-primary/10 border border-primary/20 rounded-xl text-primary transition-all active:scale-90 shadow-lg shadow-primary/5"
         >
-          <Menu size={24} />
+          <Menu size={20} />
         </button>
         
         <div className="hidden sm:flex items-center gap-4 bg-white/5 px-4 py-2 rounded-xl border border-white/10 w-64 lg:w-96 shadow-inner">

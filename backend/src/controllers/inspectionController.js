@@ -1,5 +1,4 @@
-const InspectionLog = require('../models/InspectionLog');
-const Industry = require('../models/Industry');
+const supabase = require('../config/supabaseClient');
 
 // @desc    Submit industrial inspection log
 // @route   POST /api/inspections
@@ -8,20 +7,28 @@ const submitInspection = async (req, res) => {
   try {
     const { industry, inspection_date, compliance_status, violations, remarks, photos } = req.body;
 
-    const inspection = await InspectionLog.create({
-      industry,
-      inspection_date,
-      inspector: req.user._id,
-      compliance_status,
-      violations,
-      remarks,
-      photos
-    });
+    const { data: inspection, error: insError } = await supabase
+      .from('monitoring_logs')
+      .insert([{
+        monitoring_type: 'Inspection',
+        location: industry, // Referencing industry ID as location for logs
+        value: { compliance_status, violations, photos, industry_id: industry },
+        remarks: remarks,
+        submitted_by: req.user.id || req.user._id,
+        timestamp: inspection_date || new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (insError) throw insError;
 
     // Update industry status based on inspection
-    await Industry.findByIdAndUpdate(industry, { status: compliance_status });
+    await supabase
+      .from('industries')
+      .update({ approval_status: compliance_status === 'Compliant' ? 'Approved' : 'Action Required' })
+      .eq('id', industry);
 
-    res.status(201).json(inspection);
+    res.status(201).json({ ...inspection, _id: inspection.id });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -32,23 +39,34 @@ const submitInspection = async (req, res) => {
 // @access  Private
 const getInspections = async (req, res) => {
   try {
-    let query = {};
+    let query = supabase
+      .from('monitoring_logs')
+      .select('*, submitted_by:users(name)')
+      .eq('monitoring_type', 'Inspection')
+      .order('timestamp', { ascending: false });
     
-    // Filter by role
+    // Role-based filtering
     if (req.user.role === 'Monitoring Team') {
-      query.inspector = req.user._id;
-    } else if (req.user.role === 'Regional Officer') {
-      // Find industries in this region first
-      const industries = await Industry.find({ region: req.user.region }).select('_id');
-      const industryIds = industries.map(ind => ind._id);
-      query.industry = { $in: industryIds };
+      query = query.eq('submitted_by', req.user.id || req.user._id);
     }
 
-    const inspections = await InspectionLog.find(query)
-      .populate('industry', 'industry_name')
-      .populate('inspector', 'name');
+    const { data: inspections, error } = await query;
+    if (error) throw error;
     
-    res.json(inspections);
+    // In search of industry names
+    const industryIds = [...new Set((inspections || []).map(i => i.value?.industry_id))].filter(Boolean);
+    const { data: industries } = await supabase.from('industries').select('id, industry_name').in('id', industryIds);
+    const industryMap = (industries || []).reduce((acc, ind) => ({ ...acc, [ind.id]: ind }), {});
+
+    res.json((inspections || []).map(i => ({
+      ...i,
+      _id: i.id,
+      industry: industryMap[i.value?.industry_id] ? { _id: i.value.industry_id, industry_name: industryMap[i.value.industry_id].industry_name } : null,
+      inspector: i.submitted_by,
+      inspection_date: i.timestamp,
+      compliance_status: i.value?.compliance_status,
+      remarks: i.remarks
+    })));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

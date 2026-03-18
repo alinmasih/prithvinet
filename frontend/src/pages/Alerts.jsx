@@ -21,24 +21,36 @@ const Alerts = () => {
   const filterType = searchParams.get('type');
 
   useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const res = await api.get('/alerts');
-        let filteredData = res.data;
-        
-        if (filterType === 'citizen') {
-          filteredData = res.data.filter(a => a.alert_type === 'Citizen Complaint');
-        }
-        
-        setAlerts(filteredData);
-      } catch (error) {
-        console.error('Error fetching alerts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchAlerts();
   }, [filterType]);
+
+  const fetchAlerts = async () => {
+    try {
+      const res = await api.get('/alerts');
+      let filteredData = res.data;
+      
+      if (filterType === 'citizen') {
+        filteredData = res.data.filter(a => a.alert_type === 'Citizen Complaint');
+      }
+      
+      setAlerts(filteredData);
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (alertId, newStatus) => {
+    try {
+      await api.patch(`/alerts/${alertId}/status`, { status: newStatus });
+      // Optimized: Update local state instead of re-fetching
+      setAlerts(prev => prev.map(a => a._id === alertId ? { ...a, status: newStatus } : a));
+    } catch (error) {
+      console.error('Failed to update alert status:', error);
+      alert('Failed to update status. Please try again.');
+    }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -73,7 +85,11 @@ const Alerts = () => {
       ) : alerts.length > 0 ? (
         <div className="grid grid-cols-1 gap-6">
           {alerts.map((alert) => (
-            <AlertItem key={alert._id} alert={alert} />
+            <AlertItem 
+              key={alert._id} 
+              alert={alert} 
+              onUpdateStatus={(status) => handleUpdateStatus(alert._id, status)} 
+            />
           ))}
         </div>
       ) : (
@@ -86,7 +102,7 @@ const Alerts = () => {
   );
 };
 
-const AlertItem = ({ alert }) => {
+const AlertItem = ({ alert, onUpdateStatus }) => {
   const isHigh = alert.alert_type === 'Pollution Exceedance' || alert.alert_type === 'Industrial Violation' || alert.alert_type === 'Citizen Complaint';
   const isCitizen = alert.alert_type === 'Citizen Complaint';
 
@@ -104,7 +120,7 @@ const AlertItem = ({ alert }) => {
                   {isCitizen ? 'Citizen Complaint via Portal' : alert.alert_type}
                 </h3>
                 <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest 
-                  ${alert.status === 'Active' ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                  ${alert.status === 'Open' || alert.status === 'Active' ? 'bg-rose-500 text-white' : alert.status === 'Investigating' ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white'}`}>
                   {alert.status}
                 </span>
               </div>
@@ -131,12 +147,28 @@ const AlertItem = ({ alert }) => {
         </div>
         
         <div className="flex items-center gap-3 lg:self-center">
-            <button className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
-              Investigate
-            </button>
-            <button className="px-6 py-3 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all">
-              Mark as Fixed
-            </button>
+            {alert.status !== 'Resolved' && alert.status !== 'Fixed' && (
+              <>
+                <button 
+                  onClick={() => onUpdateStatus('Investigating')}
+                  disabled={alert.status === 'Investigating'}
+                  className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all disabled:opacity-50"
+                >
+                  {alert.status === 'Investigating' ? 'Investigating...' : 'Investigate'}
+                </button>
+                <button 
+                  onClick={() => onUpdateStatus('Resolved')}
+                  className="px-6 py-3 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all"
+                >
+                  Mark as Fixed
+                </button>
+              </>
+            )}
+            {(alert.status === 'Resolved' || alert.status === 'Fixed') && (
+              <div className="flex items-center gap-2 text-emerald-500 font-bold uppercase text-[10px]">
+                <CheckCircle2 size={16} /> Closed
+              </div>
+            )}
         </div>
       </div>
     </div>

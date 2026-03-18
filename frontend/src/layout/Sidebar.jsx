@@ -6,18 +6,15 @@ import {
   Map, 
   Users, 
   Factory, 
-  Waves, 
   Activity, 
   FileWarning, 
   FileText, 
   ShieldCheck, 
   Cpu, 
-  Box,
   LogOut,
   X,
-  Building2,
   ChevronDown,
-  TrendingUp,
+  Globe,
   ChevronRight as ChevronRightIcon
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -48,7 +45,6 @@ const Sidebar = ({ isOpen, close }) => {
   };
 
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: !isIndustryUser },
     { 
       name: 'Regional Office', 
       icon: Map, 
@@ -58,9 +54,7 @@ const Sidebar = ({ isOpen, close }) => {
     { name: 'Field Entry', icon: Activity, path: '/monitoring', show: isMonitoringTeam },
     { name: 'Corporate Grid', icon: Factory, path: '/industry', show: false },
     { name: 'Upload Report', icon: FileText, path: '/upload-report', show: isIndustryUser },
-    { name: 'Monitoring Team', icon: Activity, path: '/stations', show: isAdmin || isRegionalOfficer },
     { name: 'Industries', icon: Factory, path: '/industries', show: isAdmin || isRegionalOfficer },
-    { name: 'Water Sources', icon: Waves, path: '/water-sources', show: isAdmin || isRegionalOfficer },
     { 
       name: 'Alerts', 
       icon: FileWarning, 
@@ -78,13 +72,10 @@ const Sidebar = ({ isOpen, close }) => {
       show: isAdmin || isRegionalOfficer || isMonitoringTeam,
       subItems: [
         { name: 'Industry Report', path: '/reports/industry' },
-        { name: 'Regional Office Report', path: '/reports/regional' },
         { name: 'IoT Data', path: '/reports/iot' }
       ]
     },
     { name: 'AI Copilot', icon: Cpu, path: '/ai-copilot', show: isAdmin || isRegionalOfficer },
-    { name: 'AI Forecasting', icon: TrendingUp, path: '/forecasting', show: !isIndustryUser },
-    { name: '3D Simulation', icon: Box, path: '/simulation', show: !isIndustryUser },
     { name: 'User Management', icon: Users, path: '/users', show: isAdmin || isRegionalOfficer },
   ];
 
@@ -102,7 +93,7 @@ const Sidebar = ({ isOpen, close }) => {
         fixed inset-y-0 left-0 w-64 h-screen glass-morphism z-50 flex flex-col p-4 border-r border-white/5
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:block
+        lg:translate-x-0 lg:static lg:flex
       `}>
 
         <div className="flex items-center justify-between mb-10 px-2">
@@ -146,6 +137,9 @@ const Sidebar = ({ isOpen, close }) => {
                         <NavLink
                           key={sub.path}
                           to={sub.path}
+                          onClick={() => {
+                            if (window.innerWidth < 1024) close();
+                          }}
                           className={({ isActive }) => 
                             `flex items-center gap-3 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
                               isActive ? 'text-primary' : 'text-text-muted hover:text-white'
